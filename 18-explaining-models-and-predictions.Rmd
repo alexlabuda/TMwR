@@ -2,29 +2,56 @@
 knitr::opts_chunk$set(fig.path = "figures/")
 library(tidymodels)
 library(forcats)
+library(klaR)
 tidymodels_prefer()
 conflicted::conflict_prefer("vi", "vip")
 conflicted::conflict_prefer("explain", "lime")
 
 source("ames_snippets.R")
 
+# Convert integer columns to numeric where needed
 ames_train <- ames_train %>%
-  mutate_if(is.integer, as.numeric)
+  mutate(across(where(is.integer), as.numeric))
 
+# Define Random Forest model
 rf_model <- 
   rand_forest(trees = 1000) %>% 
   set_engine("ranger") %>% 
   set_mode("regression")
 
+# Define Linear Regression model
+lm_model <- 
+  linear_reg() %>%
+  set_engine("lm") %>%
+  set_mode("regression")
+
+# Define Random Forest workflow
 rf_wflow <- 
   workflow() %>% 
   add_formula(
     Sale_Price ~ Neighborhood + Gr_Liv_Area + Year_Built + Bldg_Type + 
-      Latitude + Longitude) %>% 
-  add_model(rf_model) 
+      Latitude + Longitude
+  ) %>%
+  add_model(rf_model)
 
+# Define Linear Regression workflow
+lm_wflow <- 
+  workflow() %>%
+  add_formula(
+    Sale_Price ~ Neighborhood + Gr_Liv_Area + Year_Built + Bldg_Type + 
+      Latitude + Longitude
+  ) %>%
+  add_model(lm_model)
+
+# Fit the Random Forest model
 rf_fit <- rf_wflow %>% fit(data = ames_train)
+
+# Fit the Linear Regression model
 lm_fit <- lm_wflow %>% fit(data = ames_train)
+
+# Print model summaries
+rf_fit
+lm_fit
 ```
 
 # Explaining Models and Predictions {#explain}
